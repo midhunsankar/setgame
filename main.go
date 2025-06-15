@@ -19,11 +19,7 @@ func main() {
 	prepareCards()
 	//testPrepareCards() // for testing purposes only, use prepareCards() for the full deck.
 	prepareCardMap()
-
-	println("\n")
-	println("0: show cards.")
-	println("1: solve set.")
-	println("ctrl + c: exit.")
+	clearScreen()
 
 	// loop and read key presses
 	sigs := make(chan os.Signal, 1)
@@ -49,10 +45,12 @@ loop:
 			// allowed option are 0 and 1
 			switch s {
 			case "0":
-				println("Showing cards.\n")
+				clearScreen()
+				println("Showing cards...\n")
 				showGrid()
+				showCardDetails(grid)
 			case "1":
-				println("Solving set.")
+				println("Solving set...")
 				findSets()
 			default:
 				println("Unknown command:", s)
@@ -204,12 +202,24 @@ func findSets() {
 			}
 		}
 	}
-	// find all sets in the sorted grid.
-	for i := 0; i < len(sortedGrid)-2; i++ {
-		index := sortedGrid[i]*100 + sortedGrid[i+1]*10 + sortedGrid[i+2]
-		if contains(cardMap, index) {
-			fmt.Printf("Found set: %d, %d, %d\n", sortedGrid[i], sortedGrid[i+1], sortedGrid[i+2])
+
+	found := 0
+	for i := 0; i < len(sortedGrid); i++ {
+		for j := i + 1; j < len(sortedGrid); j++ {
+			for k := j + 1; k < len(sortedGrid); k++ {
+				if checkSet(uint16(sortedGrid[i]), uint16(sortedGrid[j]), uint16(sortedGrid[k])) {
+					fmt.Printf("\nFound Set!!: %d, %d, %d", sortedGrid[i], sortedGrid[j], sortedGrid[k])
+					showCardDetails([]int{sortedGrid[i], sortedGrid[j], sortedGrid[k]})
+					found++
+				}
+			}
 		}
+	}
+
+	if found == 0 {
+		println("No sets found in the current grid. Try reshuffling the cards.")
+	} else {
+		println("Total sets found:", found)
 	}
 }
 
@@ -277,18 +287,24 @@ func testPrepareCards() {
 	}
 }
 
-func showCards() {
-	for _, card := range deck {
-		fmt.Printf("Card ID: %d, Number: %d, Color: %d, Shape: %d, Shading: %d\n",
-			card.ID, card.Number, card.Color, card.Shape, card.Shading)
+func showCardDetails(cardIds []int) {
+	println("\n")
+	for _, item := range cardIds {
+		card := deck[uint16(item)]
+		fmt.Printf("Card: %d, Number: %d, Color: %v, Shape: %v, Shading: %v\n",
+			card.ID, card.Number, colorToString(card.Color), shapeToString(card.Shape), shadingToString(card.Shading))
 	}
 }
 
-func showCardMap() {
-	for _, cardID := range cardMap {
-		fmt.Printf("Card Map ID: %d\n", cardID)
-	}
-	println("Total sets found:", len(cardMap))
+func clearScreen() {
+	// Clear the console screen.
+	// This is a simple way to clear the screen in a terminal.
+	// It works on Unix-like systems and Windows.
+	fmt.Print("\033[H\033[2J")
+	println("0: Shuffle cards.")
+	println("1: Solve set.")
+	println("ctrl + c: exit.")
+	println("\n")
 }
 
 // contains checks if a slice of ints contains a specific int value.
@@ -299,4 +315,46 @@ func contains(slice []int, value int) bool {
 		}
 	}
 	return false
+}
+
+// convert Colors, Shapes, Shadings to string for printing.
+func colorToString(c model.Color) string {
+	switch c {
+	case model.Red:
+		return "Red"
+	case model.Green:
+		return "Green"
+	case model.Purple:
+		return "Purple"
+	default:
+		return "Unknown Color"
+	}
+}
+
+// convert Shapes to string for printing.
+func shapeToString(s model.Shape) string {
+	switch s {
+	case model.Diamond:
+		return "Diamond"
+	case model.Oval:
+		return "Oval"
+	case model.Swiggle:
+		return "Swiggle"
+	default:
+		return "Unknown Shape"
+	}
+}
+
+// convert Shadings to string for printing.
+func shadingToString(s model.Shading) string {
+	switch s {
+	case model.Solid:
+		return "Solid"
+	case model.Striped:
+		return "Striped"
+	case model.Plain:
+		return "Plain"
+	default:
+		return "Unknown Shading"
+	}
 }
