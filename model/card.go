@@ -8,26 +8,26 @@ const (
 	Purple
 )
 
-type Shape int
+type Shape int8
 
 const (
-	Diamond Shape = iota
-	Oval
-	Swiggle
+	Diamond Shape = 0
+	Oval    Shape = 1
+	Swiggle Shape = 2
 )
 
-type Shading int
+type Shading int8
 
 const (
-	Solid Shading = iota
-	Striped
-	Plain
+	Solid   Shading = 0
+	Striped Shading = 1
+	Plain   Shading = 2
 )
 
 type Card struct {
-	ID      int16   `json:"id"`
-	Color   Color   `json:"color"`
-	Shape   Shape   `json:"shape"`
-	Shading Shading `json:"shading"`
-	Count   int8    `json:"count"`
+	ID      int16
+	Color   Color
+	Shape   Shape
+	Shading Shading
+	Number  int8
 }
