@@ -7,18 +7,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 var deck map[uint16]model.Card
-var cardMap []int
 var grid []int
 
 func main() {
 
 	prepareCards()
 	//testPrepareCards() // for testing purposes only, use prepareCards() for the full deck.
-	prepareCardMap()
 	clearScreen()
 
 	// loop and read key presses
@@ -64,7 +61,7 @@ func prepareCards() {
 	deck = map[uint16]model.Card{
 		// The first card is a placeholder with ID 0, Count 0, and all attributes set to default.
 		// This card is not used in the game but serves as a starting point.
-		0: {ID: 0, Number: 0, Color: model.Red, Shape: model.Diamond, Shading: model.Solid},
+		0: {ID: 0, Number: 0, Color: model.NoColor, Shape: model.NoShape, Shading: model.NoShading},
 
 		// The following cards are defined with unique IDs, counts, colors, shapes, and shadings.
 		// Each card represents a unique combination of these attributes.
@@ -152,33 +149,16 @@ func prepareCards() {
 	}
 }
 
-func prepareCardMap() {
-	count := 0
-	len := len(deck) - 1 // as the first card is a placeholder and not used in the game.
-	var i uint16
-	for i = 1; int(i) < (len); i++ {
-		for j := i + 1; j < uint16(len); j++ {
-			for k := j + 1; k <= uint16(len); k++ {
-				if checkSet(i, j, k) {
-					mapID := i*100 + j*10 + k
-					cardMap = append(cardMap, int(mapID))
-					count++
-				}
-			}
-		}
-	}
-}
-
 func showGrid() {
 	// This function is for displaying the grid of cards.
 	// initialize the grid with 12 empty slots.
 	grid = make([]int, 12)
 	// take a random number of cards from the deck and fill the grid.
-	rand.Seed(time.Now().UnixNano())
+
 	deckSize := len(deck) - 1 // exclude placeholder card
 	for i := 0; i < 12; i++ {
 		// get a random card ID from the deck.
-		randomIndex := rand.Intn(deckSize) + 1 // IDs start from 1
+		randomIndex := rand.Intn(deckSize)
 		grid[i] = randomIndex
 	}
 
@@ -205,6 +185,10 @@ func findSets() {
 
 	found := 0
 	for i := 0; i < len(sortedGrid); i++ {
+		if sortedGrid[i] == 0 {
+			// Skip the placeholder card with ID 0.
+			continue
+		}
 		for j := i + 1; j < len(sortedGrid); j++ {
 			for k := j + 1; k < len(sortedGrid); k++ {
 				if checkSet(uint16(sortedGrid[i]), uint16(sortedGrid[j]), uint16(sortedGrid[k])) {
@@ -305,16 +289,6 @@ func clearScreen() {
 	println("1: Solve set.")
 	println("ctrl + c: exit.")
 	println("\n")
-}
-
-// contains checks if a slice of ints contains a specific int value.
-func contains(slice []int, value int) bool {
-	for _, v := range slice {
-		if v == value {
-			return true
-		}
-	}
-	return false
 }
 
 // convert Colors, Shapes, Shadings to string for printing.
