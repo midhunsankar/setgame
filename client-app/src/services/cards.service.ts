@@ -2,6 +2,7 @@ import * as rxjs from "rxjs";
 import type { Subject } from "rxjs/internal/Subject";
 import type { Card } from "../models/card";
 import type { Observable } from "rxjs/internal/Observable";
+import MessagesService from "./messages.service";
 
 class CardsService {
   private cards: Card[] = [];
@@ -9,6 +10,8 @@ class CardsService {
   private static matchingSets: Subject<Array<Card[]>> = new rxjs.Subject<
     Array<Card[]>
   >();
+  private static selectedCards: Card[] = [];
+  private matchUserGuessed: Array<Card[]> = [];
 
   constructor() {
     this.cards = this.loadCards();
@@ -248,6 +251,7 @@ class CardsService {
     });
     // Emit the shuffled cards to the subscribers.
     CardsService.cardsListSubject.next(shuffledCards);
+    MessagesService.clearMessages();
   }
 
   public solveSet(cards: Card[]): void {
@@ -255,9 +259,49 @@ class CardsService {
     const sets = this.findSets(cards);
     if (sets.length > 0) {
       CardsService.matchingSets.next(sets);
+      MessagesService.addMessage(
+        `Found ${sets.length} matching sets.`,
+        "SUCCESS"
+      );
     } else {
       CardsService.matchingSets.next([]);
+      MessagesService.addMessage("No matching sets found.", "INFO");
     }
+  }
+
+  public static getSelectedCards(): Card[] {
+    // Return the currently selected cards.
+    return CardsService.selectedCards;
+  }
+
+  public static updateSelectedCards(cards: Card[]): void {
+    // Add the selected cards to the array
+    CardsService.selectedCards = [...cards];
+  }
+
+  public checkMatch(): boolean {
+    // Check if the selected cards form a valid set
+    if (CardsService.selectedCards.length !== 3) {
+      return false;
+    }
+    // Check if the selected cards in matchUserGuessed
+    if (this.matchUserGuessed.some((match) => match.every((card, index) => card.id === CardsService.selectedCards[index].id))) {
+      MessagesService.addMessage("You already guessed this set.", "ERROR");
+      return false;
+    }
+
+    const output = this.checkSet(CardsService.selectedCards[0], CardsService.selectedCards[1], CardsService.selectedCards[2]);
+    if (output) {
+      this.matchUserGuessed.push(CardsService.selectedCards);
+      CardsService.matchingSets.next(this.matchUserGuessed);
+      MessagesService.addMessage("Congratulations! You found a valid set.", "SUCCESS");
+    }
+    else{
+      CardsService.matchingSets.next([]);
+      MessagesService.addMessage("Sorry, the selected cards do not form a valid set.", "ERROR");
+    }
+    CardsService.selectedCards = [];
+    return output;
   }
 
   private findSets(cards: Card[]): Array<Card[]> {

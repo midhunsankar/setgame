@@ -6,15 +6,20 @@ import GridPlaceHolder from './components/GridPlaceHolder'
 import Actions from './components/Actions'
 import type { Card } from './models/card'
 import Matches from './components/Matches'
+import Messages from './components/Messages'
+import MessagesService from './services/messages.service'
+import type { Message } from './models/message'
 
 function App() {
 
   const [cards, setCards] = useState(([]) as Card[]);
   const [matches, setMatches] = useState<Array<Card[]> | undefined>(undefined);
+  const [message, setMessages] = useState<Message>();
   const theme = useTheme();
   const cardsSubscription = CardsService.getCards();
   const matchesSubscription = CardsService.getMatchingSets();
-
+  const messagesSubscription = MessagesService.getMessages();
+  
   useEffect(() => {
     cardsSubscription
       .subscribe((loadedCards: Card[]) => {
@@ -25,7 +30,11 @@ function App() {
       .subscribe((matches: Array<Card[]>) => {
         setMatches(matches);
       });
-    
+    messagesSubscription
+      .subscribe((msg) => {
+        setMessages(msg);
+      });
+
   }, []);
 
  
@@ -63,6 +72,7 @@ function App() {
           <div>
           <Actions cards={cards} />
           </div>
+          <Messages message={message} />
           <div>
           <Matches matches={matches} />
           </div>

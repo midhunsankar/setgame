@@ -52,6 +52,12 @@
   background: #fff;
   margin: 0.5em;
   position: relative;
+  cursor: pointer;
+}
+
+.set-placeholder .selected {
+  border: 2px solid lime;
+  opacity: 0.8;
 }
 
 .set-placeholder .set-card img {
