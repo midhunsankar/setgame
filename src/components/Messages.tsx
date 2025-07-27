@@ -1,11 +1,13 @@
 import type { Message } from "../models/message";
 
 function Messages({ message }: { message: Message | undefined }) {
-  if (!message) return null;
+  if (!message) return (
+    <div></div>
+  );
 
   return (
     <div className={`message ${message.type}`}>
-      <h2>{message.content}</h2>
+      <b>{message.content}</b>
     </div>
   );
 }

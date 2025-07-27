@@ -1,37 +1,33 @@
 import { useTheme } from "@mui/material";
 import type { Card } from "../models/card";
-import CardsService from "../services/cards.service";
-import { useEffect } from "react";
+import type ActionService from "../services/action.service";
+import type { ActionStates } from "../models/action-states";
 
-
-function Actions({ cards = [] }: { cards?: Card[] }) {
-    const cardsService = new CardsService();
+function Actions({ cards = [], actionsService, actionStates }: { cards?: Card[], actionsService: ActionService, actionStates: ActionStates }) {
     const theme = useTheme();
 
-    useEffect(() => {
-        shuffleCards();
-    }, []);
-
     function shuffleCards() {
-        cardsService.shuffleCards();
+        actionsService.shuffleCards();
     }
 
     function solveCards() {
-        cardsService.solveSet(cards);
+        actionsService.solveSet(cards);
     }
 
     function checkSelectedCards(): void {
-        const isMatch = cardsService.checkMatch();
-        console.log(`Match found: ${isMatch}`);
+       const match = actionsService.checkMatch(cards.filter(card => card.selected));
+       if (match) {
+          actionsService.resetSelectedCards(cards);
+       }
     }
     
   return (
     <div className="flex flex-col gap-2">
-      <button onClick={shuffleCards} className="btn btn-secondary" style={{ backgroundColor: theme.palette.warning.light, color: theme.palette.success.contrastText, border: '1px solid #fff' }}>Shuffle</button>
+      <button disabled={!actionStates.enableShuffle} onClick={shuffleCards} className="btn btn-secondary" style={{ backgroundColor: theme.palette.warning.light, color: theme.palette.success.contrastText }}>Shuffle</button>
       &nbsp;
-      <button onClick={solveCards} className="btn btn-primary" style={{ backgroundColor: theme.palette.success.light, color: theme.palette.success.contrastText, border: '1px solid #fff' }}>Solve</button>
+      <button disabled={!actionStates.enableSolve} onClick={solveCards} className="btn btn-primary" style={{ backgroundColor: theme.palette.success.light, color: theme.palette.success.contrastText }}>Solve</button>
       &nbsp;
-      <button onClick={checkSelectedCards} className="btn btn-primary" style={{ backgroundColor: theme.palette.success.light, color: theme.palette.success.contrastText, border: '1px solid #fff' }}>Set</button>
+      <button disabled={!actionStates.enableSet} onClick={checkSelectedCards} className="btn btn-primary" style={{ backgroundColor: theme.palette.success.light, color: theme.palette.success.contrastText }}>Set</button>
 
     </div>
   );

@@ -5,19 +5,20 @@ import type { Observable } from "rxjs/internal/Observable";
 import MessagesService from "./messages.service";
 
 class CardsService {
-  private cards: Card[] = [];
-  private static cardsListSubject: Subject<Card[]> = new rxjs.Subject<Card[]>();
-  private static matchingSets: Subject<Array<Card[]>> = new rxjs.Subject<
+  private deck: Card[] = [];
+  private cardsListSubject: Subject<Card[]> = new rxjs.Subject<Card[]>();
+  private matchingSets: Subject<Array<Card[]>> = new rxjs.Subject<
     Array<Card[]>
   >();
-  private static selectedCards: Card[] = [];
   private matchUserGuessed: Array<Card[]> = [];
+  private messagesService: MessagesService;
 
-  constructor() {
-    this.cards = this.loadCards();
+  constructor(_messagesService: MessagesService) {
+    this.deck = this.loadDeck();
+    this.messagesService = _messagesService;
   }
 
-  private loadCards(): Card[] {
+  private loadDeck(): Card[] {
     // Simulate loading cards from a database or API
     return [
       // The first card is a placeholder with no attributes.
@@ -211,17 +212,17 @@ class CardsService {
     ];
   }
 
-  public static getCards(): Observable<Card[]> {
+  public getCards(): Observable<Card[]> {
     return this.cardsListSubject.asObservable();
   }
 
-  public static getMatchingSets(): Observable<Array<Card[]>> {
+  public getMatchingSets(): Observable<Array<Card[]>> {
     return this.matchingSets.asObservable();
   }
 
   public unsubscribe(): void {
     // Unsubscribe from the Subject to prevent memory leaks.
-    CardsService.cardsListSubject.unsubscribe();
+    this.cardsListSubject.unsubscribe();
   }
 
   public shuffleCards(): void {
@@ -234,7 +235,7 @@ class CardsService {
       let randomIndex: number;
       // Ensure the random number is between 0 and 81 (the total number of cards).
       const min = 0;
-      const max = this.cards.length - 1;
+      const max = this.deck.length - 1;
       // Ensure the random index is unique.
       do {
         randomIndex = Math.floor(Math.random() * (max - min + 1) + min);
@@ -243,64 +244,60 @@ class CardsService {
     }
 
     shuffledCardIds.forEach((id) => {
-      const card = this.cards.find((c) => c.id === id);
+      const card = this.deck.find((c) => c.id === id);
       if (!card) {
         return;
       }
       shuffledCards.push(card);
     });
+
+    if (this.findSets(shuffledCards).length === 0) {
+      // If no sets are found, reshuffle the cards.
+      return this.shuffleCards();
+    }
+
     // Emit the shuffled cards to the subscribers.
-    CardsService.cardsListSubject.next(shuffledCards);
-    MessagesService.clearMessages();
+    this.updateCards(shuffledCards);
+    this.messagesService.clearMessages();
+    this.matchUserGuessed = []; // Reset the user's guessed matches
+    this.matchingSets.next([]); // Clear previous matches
+  }
+
+  public updateCards(cards: Card[]): void {
+    // Update the cards in the service and emit the new list.
+    this.cardsListSubject.next(cards);
   }
 
   public solveSet(cards: Card[]): void {
     // Find all sets in the provided cards and emit them.
     const sets = this.findSets(cards);
-    if (sets.length > 0) {
-      CardsService.matchingSets.next(sets);
-      MessagesService.addMessage(
+      this.matchingSets.next(sets);
+      this.messagesService.addMessage(
         `Found ${sets.length} matching sets.`,
         "SUCCESS"
-      );
-    } else {
-      CardsService.matchingSets.next([]);
-      MessagesService.addMessage("No matching sets found.", "INFO");
-    }
+      );  
   }
 
-  public static getSelectedCards(): Card[] {
-    // Return the currently selected cards.
-    return CardsService.selectedCards;
-  }
-
-  public static updateSelectedCards(cards: Card[]): void {
-    // Add the selected cards to the array
-    CardsService.selectedCards = [...cards];
-  }
-
-  public checkMatch(): boolean {
+  public checkMatch(selectedCards: Card[]): boolean {
     // Check if the selected cards form a valid set
-    if (CardsService.selectedCards.length !== 3) {
+    if (selectedCards.length !== 3) {
       return false;
     }
     // Check if the selected cards in matchUserGuessed
-    if (this.matchUserGuessed.some((match) => match.every((card, index) => card.id === CardsService.selectedCards[index].id))) {
-      MessagesService.addMessage("You already guessed this set.", "ERROR");
+    if (this.matchUserGuessed.some((match) => match.every((card, index) => card.id === selectedCards[index].id))) {
+      this.messagesService.addMessage("You already found this set.", "ERROR");
       return false;
     }
 
-    const output = this.checkSet(CardsService.selectedCards[0], CardsService.selectedCards[1], CardsService.selectedCards[2]);
+    const output = this.checkSet(selectedCards[0], selectedCards[1], selectedCards[2]);
     if (output) {
-      this.matchUserGuessed.push(CardsService.selectedCards);
-      CardsService.matchingSets.next(this.matchUserGuessed);
-      MessagesService.addMessage("Congratulations! You found a valid set.", "SUCCESS");
+      this.matchUserGuessed.push(selectedCards);
+      this.messagesService.addMessage("Congratulations! You found a set.", "SUCCESS");
+      this.matchingSets.next(this.matchUserGuessed);
     }
     else{
-      CardsService.matchingSets.next([]);
-      MessagesService.addMessage("Sorry, the selected cards do not form a valid set.", "ERROR");
+      this.messagesService.addMessage("Sorry, the selected cards do not form a set.", "ERROR");
     }
-    CardsService.selectedCards = [];
     return output;
   }
 

@@ -1,30 +1,39 @@
 import { Grid, Container, useTheme } from '@mui/material'
 import { useEffect, useState } from 'react'
 import './App.css'
-import CardsService from './services/cards.service'
 import GridPlaceHolder from './components/GridPlaceHolder'
 import Actions from './components/Actions'
 import type { Card } from './models/card'
 import Matches from './components/Matches'
 import Messages from './components/Messages'
-import MessagesService from './services/messages.service'
 import type { Message } from './models/message'
+import Factory from './Factory'
+import type { ActionStates } from './models/action-states'
 
 function App() {
 
   const [cards, setCards] = useState(([]) as Card[]);
   const [matches, setMatches] = useState<Array<Card[]> | undefined>(undefined);
   const [message, setMessages] = useState<Message>();
+  const [actionStates, setActionStates] = useState<ActionStates>({ enableShuffle: true, enableSolve: true, enableSet: false });
   const theme = useTheme();
-  const cardsSubscription = CardsService.getCards();
-  const matchesSubscription = CardsService.getMatchingSets();
-  const messagesSubscription = MessagesService.getMessages();
-  
+
+  const module = {
+    cardsService: Factory.getCardsService(),
+    messagesService: Factory.getMessagesService(),
+    actionService: Factory.getActionService()
+  };
+
+
+  const cardsSubscription = module.cardsService.getCards();
+  const matchesSubscription = module.cardsService.getMatchingSets();
+  const messagesSubscription = module.messagesService.getMessages();
+  const actionStatesSubscription = module.actionService.getActionStates();
+
   useEffect(() => {
     cardsSubscription
       .subscribe((loadedCards: Card[]) => {
       setCards(loadedCards);
-      setMatches(undefined); // Reset matches when new cards are loaded
     });
     matchesSubscription
       .subscribe((matches: Array<Card[]>) => {
@@ -34,7 +43,12 @@ function App() {
       .subscribe((msg) => {
         setMessages(msg);
       });
-
+    actionStatesSubscription
+      .subscribe((states: ActionStates) => {
+        setActionStates(states);
+      });
+    // Initial shuffle of cards
+    module.cardsService.shuffleCards();
   }, []);
 
  
@@ -67,10 +81,10 @@ function App() {
               </p>
           </div>
           <div>
-          <GridPlaceHolder cards={cards} />
+          <GridPlaceHolder cards={cards} actionService={module.actionService} />
           </div>
           <div>
-          <Actions cards={cards} />
+          <Actions cards={cards} actionsService={module.actionService} actionStates={actionStates} />
           </div>
           <Messages message={message} />
           <div>

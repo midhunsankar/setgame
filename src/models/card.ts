@@ -8,4 +8,5 @@ export interface Card {
   color: Color;
   shape: Shape;
   shading: Shading;
+  selected?: boolean;
 }

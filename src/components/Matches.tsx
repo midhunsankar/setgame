@@ -18,7 +18,7 @@ function Matches({ matches }: { matches: Array<Card[]> | undefined }) {
                         {match.map(card => (
                             <span key={card.id} className="match-card">
                                 <img
-                                    src={`/images/cards/card (${card.id}).png`}
+                                    src={`./images/cards/card (${card.id}).png`}
                                     alt={`${card.color} ${card.shape} ${card.shading}`}
                                     className='set-card-image'
                                 />

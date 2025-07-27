@@ -47,7 +47,7 @@
 }
 
 .set-placeholder .set-card{
-  max-width: 28%;
+  max-width: 26%;
   height: 75px;
   background: #fff;
   margin: 0.5em;
@@ -68,4 +68,34 @@
 
 .matches {
   color: #fff;
+}
+
+
+.message {
+	margin-top: 5px;
+	background-color: #fff;
+	text-align: center;
+	padding: 8px 0px;
+}
+.message.ERROR {
+  color: #d81226;
+}
+.message.SUCCESS {
+  color: #16a136;
+}
+.message.INFO {
+  color: #0f9ab3;
+}
+.message.WARNING {
+  color: #f3c53a;
+}
+
+.btn {
+  border: 1px solid #fff;
+}
+
+.btn:disabled {
+  background-color: #ccc !important;
+  color: #888 !important;
+  cursor: not-allowed;
 }
